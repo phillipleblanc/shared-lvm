@@ -37,15 +37,31 @@ func CreateVolumeIfNotExists(name string, volumeGroup string, capacityBytes int6
 }
 
 func ActivateVolumeGroupLock(volumeGroup string) error {
-	return exec.Command("vgchange", "--lockstart", volumeGroup).Run()
+	output, err := exec.Command("vgchange", "--lockstart", volumeGroup).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error activating volume group lock: %w\noutput: %s", err, string(output))
+	}
+
+	return nil
 }
 
 func ActivateVolume(name string, volumeGroup string) error {
-	return exec.Command("lvchange", "-ay", volumeGroup+"/"+name).Run()
+	output, err := exec.Command("lvchange", "-ay", volumeGroup+"/"+name).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error activating volume: %w\noutput: %s", err, string(output))
+	}
+
+	return nil
 }
 
 func DeactivateVolume(name string, volumeGroup string) error {
-	return exec.Command("lvchange", "-an", volumeGroup+"/"+name).Run()
+	output, err := exec.Command("lvchange", "-an", volumeGroup+"/"+name).CombinedOutput()
+
+	if err != nil {
+		return fmt.Errorf("error deactivating volume: %w\noutput: %s", err, string(output))
+	}
+
+	return nil
 }
 
 func UnmountFilesystem(targetPath string) error {
@@ -114,7 +130,12 @@ func MountFilesystem(name string, volumeGroup string, targetPath string, fsType 
 	}
 
 	mounter := &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: utilexec.New()}
-	return mounter.FormatAndMount(devPath, targetPath, fsType, mountOptions)
+	err = mounter.FormatAndMount(devPath, targetPath, fsType, mountOptions)
+	if err != nil {
+		return fmt.Errorf("failed to format and mount: %v", err)
+	}
+
+	return nil
 }
 
 func GetVolumeDevPath(name, volumeGroup string) string {

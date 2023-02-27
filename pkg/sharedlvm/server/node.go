@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/phillipleblanc/sharedlvm/pkg/sharedlvm"
@@ -38,17 +39,17 @@ func (ns *node) NodePublishVolume(
 
 	err := sharedlvm.ActivateVolumeGroupLock(volumeGroup)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to activate volume group %s: %s", volumeGroup, err.Error()))
 	}
 
 	err = sharedlvm.ActivateVolume(volumeName, volumeGroup)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to activate volume %s: %s", volumeName, err.Error()))
 	}
 
 	err = sharedlvm.MountFilesystem(volumeName, volumeGroup, targetPath, fsType, mountOptions)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to mount volume %s: %s", volumeName, err.Error()))
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
