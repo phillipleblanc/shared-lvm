@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/phillipleblanc/shared-lvm/pkg/config"
-	lvmserver "github.com/phillipleblanc/shared-lvm/pkg/sharedlvm/server"
+	"github.com/phillipleblanc/sharedlvm/pkg/config"
+	lvmserver "github.com/phillipleblanc/sharedlvm/pkg/sharedlvm/server"
 	"google.golang.org/grpc"
 	"k8s.io/klog"
 )

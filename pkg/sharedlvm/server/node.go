@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/phillipleblanc/sharedlvm/pkg/sharedlvm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -22,14 +23,54 @@ func (ns *node) NodePublishVolume(
 	ctx context.Context,
 	req *csi.NodePublishVolumeRequest,
 ) (*csi.NodePublishVolumeResponse, error) {
-	return nil, nil
+	readOnly := req.GetReadonly()
+	targetPath := req.GetTargetPath()
+	volumeId := req.GetVolumeId()
+	volumeName, volumeGroup := sharedlvm.GetVolumeNameAndGroup(volumeId)
+	fsType := req.GetVolumeCapability().GetMount().GetFsType()
+
+	mountOptions := req.GetVolumeCapability().GetMount().GetMountFlags()
+	if readOnly {
+		mountOptions = append(mountOptions, "ro")
+	}
+
+	err := sharedlvm.ActivateVolumeGroupLock(volumeGroup)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	err = sharedlvm.ActivateVolume(volumeName, volumeGroup)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	err = sharedlvm.MountFilesystem(volumeName, volumeGroup, targetPath, fsType, mountOptions)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &csi.NodePublishVolumeResponse{}, nil
 }
 
 func (ns *node) NodeUnpublishVolume(
 	ctx context.Context,
 	req *csi.NodeUnpublishVolumeRequest,
 ) (*csi.NodeUnpublishVolumeResponse, error) {
-	return nil, nil
+	targetPath := req.GetTargetPath()
+	volumeId := req.GetVolumeId()
+	volumeName, volumeGroup := sharedlvm.GetVolumeNameAndGroup(volumeId)
+
+	err := sharedlvm.UnmountFilesystem(targetPath)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	err = sharedlvm.DeactivateVolume(volumeName, volumeGroup)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
 func (ns *node) NodeGetInfo(
@@ -46,15 +87,7 @@ func (ns *node) NodeGetCapabilities(
 	req *csi.NodeGetCapabilitiesRequest,
 ) (*csi.NodeGetCapabilitiesResponse, error) {
 	return &csi.NodeGetCapabilitiesResponse{
-		Capabilities: []*csi.NodeServiceCapability{
-			{
-				Type: &csi.NodeServiceCapability_Rpc{
-					Rpc: &csi.NodeServiceCapability_RPC{
-						Type: csi.NodeServiceCapability_RPC_STAGE_UNSTAGE_VOLUME,
-					},
-				},
-			},
-		},
+		Capabilities: []*csi.NodeServiceCapability{},
 	}, nil
 }
 

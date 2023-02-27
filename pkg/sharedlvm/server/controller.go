@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/phillipleblanc/sharedlvm/pkg/sharedlvm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -19,13 +20,40 @@ func (cs *controller) CreateVolume(
 	ctx context.Context,
 	req *csi.CreateVolumeRequest,
 ) (*csi.CreateVolumeResponse, error) {
-	return nil, nil
+	name := req.Name
+	capacityBytes := req.CapacityRange.GetRequiredBytes()
+	volumeGroup, ok := req.Parameters["volume_group"]
+	if !ok {
+		return nil, status.Error(codes.InvalidArgument, "volume_group parameter is required")
+	}
+
+	if err := sharedlvm.ValidateName(name); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid volume name: %s", err.Error())
+	}
+
+	if err := sharedlvm.ValidateName(volumeGroup); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid volume group: %s", err.Error())
+	}
+
+	err := sharedlvm.CreateVolumeIfNotExists(name, volumeGroup, capacityBytes)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &csi.CreateVolumeResponse{
+		Volume: &csi.Volume{
+			VolumeId:      sharedlvm.GetVolumeId(name, volumeGroup),
+			CapacityBytes: capacityBytes,
+			VolumeContext: req.Parameters,
+		},
+	}, nil
 }
 
 func (cs *controller) DeleteVolume(
 	ctx context.Context,
 	req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
-	return nil, nil
+	// Intentionally not deleting volumes in this first iteration
+	return &csi.DeleteVolumeResponse{}, nil
 }
 
 func (cs *controller) ValidateVolumeCapabilities(
@@ -40,7 +68,29 @@ func (cs *controller) ValidateVolumeCapabilities(
 	if len(volCaps) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "Volume capabilities not provided")
 	}
-	confirmed := &csi.ValidateVolumeCapabilitiesResponse_Confirmed{VolumeCapabilities: volCaps}
+
+	confirmedVolCaps := []*csi.VolumeCapability{}
+
+	for _, volCap := range volCaps {
+		var supportedAccessType, supportedAccessMode bool
+		switch volCap.GetAccessType().(type) {
+		case *csi.VolumeCapability_Mount:
+			supportedAccessType = true
+		default:
+		}
+
+		switch volCap.GetAccessMode().GetMode() {
+		case csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER, csi.VolumeCapability_AccessMode_SINGLE_NODE_SINGLE_WRITER:
+			supportedAccessMode = true
+		default:
+		}
+
+		if supportedAccessMode && supportedAccessType {
+			confirmedVolCaps = append(confirmedVolCaps, volCap)
+		}
+	}
+
+	confirmed := &csi.ValidateVolumeCapabilitiesResponse_Confirmed{VolumeCapabilities: confirmedVolCaps}
 	return &csi.ValidateVolumeCapabilitiesResponse{
 		Confirmed: confirmed,
 	}, nil
@@ -62,7 +112,6 @@ func newControllerCapabilities() []*csi.ControllerServiceCapability {
 	var capabilities []*csi.ControllerServiceCapability
 	for _, cap := range []csi.ControllerServiceCapability_RPC_Type{
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
-		//csi.ControllerServiceCapability_RPC_GET_CAPACITY,
 	} {
 		capabilities = append(capabilities, fromType(cap))
 	}
