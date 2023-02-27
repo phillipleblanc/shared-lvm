@@ -63,6 +63,8 @@ spec:
               mountPath: /etc/lvm
             - name: var-run-lvm
               mountPath: /var/run/lvm
+            - name: var-run-lvmlockd-pid
+              mountPath: /var/run/lvmlockd.pid
             - name: pods-mount-dir
               mountPath: /var/lib/kubelet/
               # needed so that any mounts setup inside this container are
@@ -93,3 +95,7 @@ spec:
           hostPath:
             path: /var/run/lvm
             type: Directory
+        - name: var-run-lvmlockd-pid
+          hostPath:
+            path: /var/run/lvmlockd.pid
+            type: File

@@ -25,9 +25,9 @@ func (cs *controller) CreateVolume(
 
 	name := req.Name
 	capacityBytes := req.CapacityRange.GetRequiredBytes()
-	volumeGroup, ok := req.Parameters["volume_group"]
+	volumeGroup, ok := req.Parameters["volumeGroup"]
 	if !ok {
-		return nil, status.Error(codes.InvalidArgument, "volume_group parameter is required")
+		return nil, status.Error(codes.InvalidArgument, "volumeGroup parameter is required")
 	}
 
 	if err := sharedlvm.ValidateName(name); err != nil {
