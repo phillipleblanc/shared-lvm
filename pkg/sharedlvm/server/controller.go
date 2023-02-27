@@ -49,6 +49,11 @@ func (cs *controller) CreateVolume(
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create volume %s: %s", name, err.Error()))
 	}
 
+	err = sharedlvm.DeactivateVolume(name, volumeGroup)
+	if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to deactivate volume %s: %s", name, err.Error()))
+	}
+
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      sharedlvm.GetVolumeId(name, volumeGroup),
