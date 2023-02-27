@@ -23,9 +23,14 @@ func CreateVolumeIfNotExists(name string, volumeGroup string, capacityBytes int6
 		return fmt.Errorf("error checking if volume exists: %w\noutput: %s", err, string(output))
 	}
 
-	output, err = exec.Command("lvcreate", "-L", fmt.Sprintf("%sb", strconv.FormatInt(capacityBytes, 10)), "-n", name, volumeGroup).CombinedOutput()
+	output, err = exec.Command("lvcreate", "-L", fmt.Sprintf("%sb", strconv.FormatInt(capacityBytes, 10)), "-Zn", "-n", name, volumeGroup).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error creating volume: %w\noutput: %s", err, string(output))
+	}
+
+	output, err = exec.Command("dd", "if=/dev/zero", "of=/dev/"+volumeGroup+"/"+name, "bs=4k", "count=1").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error zeroing created volume: %w\noutput: %s", err, string(output))
 	}
 
 	return nil
