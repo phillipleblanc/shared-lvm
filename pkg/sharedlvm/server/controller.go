@@ -8,6 +8,7 @@ import (
 	"github.com/phillipleblanc/sharedlvm/pkg/sharedlvm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/klog"
 )
 
 type controller struct{}
@@ -20,6 +21,8 @@ func (cs *controller) CreateVolume(
 	ctx context.Context,
 	req *csi.CreateVolumeRequest,
 ) (*csi.CreateVolumeResponse, error) {
+	klog.Infof("CreateVolume: %v", req)
+
 	name := req.Name
 	capacityBytes := req.CapacityRange.GetRequiredBytes()
 	volumeGroup, ok := req.Parameters["volume_group"]
@@ -52,6 +55,7 @@ func (cs *controller) CreateVolume(
 func (cs *controller) DeleteVolume(
 	ctx context.Context,
 	req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
+	klog.Infof("DeleteVolume: %v", req)
 	// Intentionally not deleting volumes in this first iteration
 	return &csi.DeleteVolumeResponse{}, nil
 }
@@ -60,6 +64,7 @@ func (cs *controller) ValidateVolumeCapabilities(
 	ctx context.Context,
 	req *csi.ValidateVolumeCapabilitiesRequest,
 ) (*csi.ValidateVolumeCapabilitiesResponse, error) {
+	klog.Infof("ValidateVolumeCapabilities: %v", req)
 	volumeID := strings.ToLower(req.GetVolumeId())
 	if len(volumeID) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "Volume ID not provided")
@@ -122,6 +127,7 @@ func (cs *controller) ControllerGetCapabilities(
 	ctx context.Context,
 	req *csi.ControllerGetCapabilitiesRequest,
 ) (*csi.ControllerGetCapabilitiesResponse, error) {
+	klog.Info("ControllerGetCapabilities")
 
 	resp := &csi.ControllerGetCapabilitiesResponse{
 		Capabilities: newControllerCapabilities(),

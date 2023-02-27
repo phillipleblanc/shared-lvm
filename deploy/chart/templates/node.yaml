@@ -59,6 +59,10 @@ spec:
               mountPath: /csi
             - name: device-dir
               mountPath: /dev
+            - name: etc-lvm
+              mountPath: /etc/lvm
+            - name: var-run-lvm
+              mountPath: /var/run/lvm
             - name: pods-mount-dir
               mountPath: /var/lib/kubelet/
               # needed so that any mounts setup inside this container are
@@ -80,4 +84,12 @@ spec:
         - name: pods-mount-dir
           hostPath:
             path: /var/lib/kubelet/
+            type: Directory
+        - name: etc-lvm
+          hostPath:
+            path: /etc/lvm
+            type: Directory
+        - name: var-run-lvm
+          hostPath:
+            path: /var/run/lvm
             type: Directory

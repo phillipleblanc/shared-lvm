@@ -7,6 +7,7 @@ import (
 	"github.com/phillipleblanc/sharedlvm/pkg/sharedlvm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/klog"
 )
 
 type node struct {
@@ -23,6 +24,7 @@ func (ns *node) NodePublishVolume(
 	ctx context.Context,
 	req *csi.NodePublishVolumeRequest,
 ) (*csi.NodePublishVolumeResponse, error) {
+	klog.Infof("NodePublishVolume: %v", req)
 	readOnly := req.GetReadonly()
 	targetPath := req.GetTargetPath()
 	volumeId := req.GetVolumeId()
@@ -56,6 +58,7 @@ func (ns *node) NodeUnpublishVolume(
 	ctx context.Context,
 	req *csi.NodeUnpublishVolumeRequest,
 ) (*csi.NodeUnpublishVolumeResponse, error) {
+	klog.Infof("NodeUnpublishVolume: %v", req)
 	targetPath := req.GetTargetPath()
 	volumeId := req.GetVolumeId()
 	volumeName, volumeGroup := sharedlvm.GetVolumeNameAndGroup(volumeId)
@@ -77,18 +80,26 @@ func (ns *node) NodeGetInfo(
 	ctx context.Context,
 	req *csi.NodeGetInfoRequest,
 ) (*csi.NodeGetInfoResponse, error) {
-	return &csi.NodeGetInfoResponse{
+	resp := &csi.NodeGetInfoResponse{
 		NodeId: ns.nodeId,
-	}, nil
+	}
+
+	klog.Infof("NodeGetInfo: %v", resp)
+
+	return resp, nil
 }
 
 func (ns *node) NodeGetCapabilities(
 	ctx context.Context,
 	req *csi.NodeGetCapabilitiesRequest,
 ) (*csi.NodeGetCapabilitiesResponse, error) {
-	return &csi.NodeGetCapabilitiesResponse{
+	resp := &csi.NodeGetCapabilitiesResponse{
 		Capabilities: []*csi.NodeServiceCapability{},
-	}, nil
+	}
+
+	klog.Infof("NodeGetCapabilities: %v", resp)
+
+	return resp, nil
 }
 
 func (ns *node) NodeStageVolume(

@@ -5,6 +5,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+	"k8s.io/klog"
 )
 
 const (
@@ -26,10 +27,14 @@ func (id *identity) GetPluginInfo(
 	ctx context.Context,
 	req *csi.GetPluginInfoRequest,
 ) (*csi.GetPluginInfoResponse, error) {
-	return &csi.GetPluginInfoResponse{
+	resp := &csi.GetPluginInfoResponse{
 		Name:          PluginName,
 		VendorVersion: PluginVersion,
-	}, nil
+	}
+
+	klog.Infof("GetPluginInfo: %v", resp)
+
+	return resp, nil
 }
 
 // Probe checks if the plugin is running or not
@@ -52,8 +57,7 @@ func (id *identity) GetPluginCapabilities(
 	ctx context.Context,
 	req *csi.GetPluginCapabilitiesRequest,
 ) (*csi.GetPluginCapabilitiesResponse, error) {
-
-	return &csi.GetPluginCapabilitiesResponse{
+	resp := &csi.GetPluginCapabilitiesResponse{
 		Capabilities: []*csi.PluginCapability{
 			{
 				Type: &csi.PluginCapability_Service_{
@@ -63,5 +67,9 @@ func (id *identity) GetPluginCapabilities(
 				},
 			},
 		},
-	}, nil
+	}
+
+	klog.Infof("GetPluginCapabilities: %v", resp)
+
+	return resp, nil
 }
