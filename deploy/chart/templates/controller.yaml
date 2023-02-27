@@ -46,6 +46,26 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
+            - name: device-dir
+              mountPath: /dev
+            - name: etc-lvm
+              mountPath: /etc/lvm
+            - name: var-run-lvm
+              mountPath: /var/run/lvm
+            - name: var-run-lvmlockd-pid
+              mountPath: /var/run/lvmlockd.pid
       volumes:
         - name: socket-dir
           emptyDir: {}
+        - name: etc-lvm
+          hostPath:
+            path: /etc/lvm
+            type: Directory
+        - name: var-run-lvm
+          hostPath:
+            path: /var/run/lvm
+            type: Directory
+        - name: var-run-lvmlockd-pid
+          hostPath:
+            path: /var/run/lvmlockd.pid
+            type: File

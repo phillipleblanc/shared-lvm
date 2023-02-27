@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -38,9 +39,14 @@ func (cs *controller) CreateVolume(
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid volume group: %s", err.Error())
 	}
 
-	err := sharedlvm.CreateVolumeIfNotExists(name, volumeGroup, capacityBytes)
+	err := sharedlvm.ActivateVolumeGroupLock(volumeGroup)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to activate volume group %s: %s", volumeGroup, err.Error()))
+	}
+
+	err = sharedlvm.CreateVolumeIfNotExists(name, volumeGroup, capacityBytes)
+	if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create volume %s: %s", name, err.Error()))
 	}
 
 	return &csi.CreateVolumeResponse{
