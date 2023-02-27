@@ -6,10 +6,10 @@ COPY . .
 
 RUN go build ./cmd/sharedlvm
 
-FROM alpine:3.14
+FROM ubuntu:22.04
 
-RUN apk add --no-cache ca-certificates libc6-compat musl-dev
-RUN apk add --no-cache lvm2 lvm2-extra util-linux device-mapper
+RUN apt-get update && apt-get install ca-certificates musl-dev -y
+RUN apt-get install lvm2 -y
 
 COPY --from=builder /go/src/github.com/phillipleblanc/sharedlvm/sharedlvm /usr/local/bin/sharedlvm
 
