@@ -1,0 +1,3 @@
+apiVersion: v2
+name: shared-lvm-csi-driver
+version: 0.1.0

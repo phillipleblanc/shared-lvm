@@ -1,4 +1,4 @@
-package sharedlvm
+package server
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package sharedlvm
+package server
 
 import (
 	"context"
@@ -32,7 +32,6 @@ func (id *identity) Probe(
 	ctx context.Context,
 	req *csi.ProbeRequest,
 ) (*csi.ProbeResponse, error) {
-
 	return &csi.ProbeResponse{
 		Ready: wrapperspb.Bool(true),
 	}, nil

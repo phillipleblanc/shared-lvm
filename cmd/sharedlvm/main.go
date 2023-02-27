@@ -7,7 +7,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/phillipleblanc/shared-lvm/pkg/config"
-	"github.com/phillipleblanc/shared-lvm/pkg/sharedlvm"
+	lvmserver "github.com/phillipleblanc/shared-lvm/pkg/sharedlvm/server"
 	"google.golang.org/grpc"
 	"k8s.io/klog"
 )
@@ -15,7 +15,8 @@ import (
 func main() {
 	cfg := config.Config{}
 	flag.StringVar(&cfg.Endpoint, "endpoint", "/csi/csi.sock", "CSI endpoint")
-	flag.StringVar(&cfg.NodeId, "nodeid", "spice-node-1", "Node ID")
+	flag.StringVar(&cfg.ServerType, "servertype", "controller", "Server type (controller or node)")
+	flag.StringVar(&cfg.NodeId, "nodeid", "", "Node ID (required for node server)")
 
 	flag.Parse()
 
@@ -31,9 +32,19 @@ func main() {
 
 	server := grpc.NewServer()
 
-	csi.RegisterIdentityServer(server, sharedlvm.NewIdentity())
-	csi.RegisterControllerServer(server, sharedlvm.NewController())
-	csi.RegisterNodeServer(server, sharedlvm.NewNode(cfg.NodeId))
+	csi.RegisterIdentityServer(server, lvmserver.NewIdentity())
+
+	if cfg.ServerType == "controller" {
+		csi.RegisterControllerServer(server, lvmserver.NewController())
+	}
+
+	if cfg.ServerType == "node" && cfg.NodeId == "" {
+		klog.Fatalf("nodeid is required for node server")
+	}
+
+	if cfg.ServerType == "node" {
+		csi.RegisterNodeServer(server, lvmserver.NewNode(cfg.NodeId))
+	}
 
 	err = server.Serve(listener)
 	if err != nil {
