@@ -14,17 +14,21 @@ import (
 )
 
 func CreateVolumeIfNotExists(name string, volumeGroup string, capacityBytes int64) error {
-	err := exec.Command("lvdisplay", "/dev/"+volumeGroup+"/"+name).Run()
+	output, err := exec.Command("lvdisplay", "/dev/"+volumeGroup+"/"+name).CombinedOutput()
 	if err == nil {
 		return nil
 	}
 
 	if _, ok := err.(*exec.ExitError); !ok {
-		klog.Errorf("Error checking if volume exists: %s", err.Error())
-		return err
+		return fmt.Errorf("error checking if volume exists: %w\noutput: %s", err, string(output))
 	}
 
-	return exec.Command("lvcreate", "-L", fmt.Sprintf("%sb", strconv.FormatInt(capacityBytes, 10)), "-n", name, volumeGroup).Run()
+	output, err = exec.Command("lvcreate", "-L", fmt.Sprintf("%sb", strconv.FormatInt(capacityBytes, 10)), "-n", name, volumeGroup).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error creating volume: %w\noutput: %s", err, string(output))
+	}
+
+	return nil
 }
 
 func ActivateVolumeGroupLock(volumeGroup string) error {

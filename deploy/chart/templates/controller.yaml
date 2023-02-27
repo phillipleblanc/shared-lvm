@@ -25,6 +25,7 @@ spec:
       labels:
         app: sharedlvm-csi-controller
     spec:
+      hostNetwork: true
       serviceAccount: sharedlvm-controller-serviceaccount
       containers:
         - name: csi-provisioner
@@ -38,6 +39,8 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: sharedlvm-driver
+          securityContext:
+            privileged: true
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: IfNotPresent
           args:
@@ -57,6 +60,10 @@ spec:
       volumes:
         - name: socket-dir
           emptyDir: {}
+        - name: device-dir
+          hostPath:
+            path: /dev
+            type: Directory
         - name: etc-lvm
           hostPath:
             path: /etc/lvm
