@@ -7,6 +7,11 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+const (
+	PluginName    = "sharedlvm.csi.leblanc.tech"
+	PluginVersion = "v0.0.1+alpha.01"
+)
+
 type identity struct{}
 
 func NewIdentity() csi.IdentityServer {
@@ -22,8 +27,8 @@ func (id *identity) GetPluginInfo(
 	req *csi.GetPluginInfoRequest,
 ) (*csi.GetPluginInfoResponse, error) {
 	return &csi.GetPluginInfoResponse{
-		Name:          "sharedlvm.csi.leblanc.tech",
-		VendorVersion: "v0.0.1+alpha.01",
+		Name:          PluginName,
+		VendorVersion: PluginVersion,
 	}, nil
 }
 
